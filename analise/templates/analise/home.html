@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise de Propagação de HIV - Moçambique</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #8e44ad; /* Roxo - cor temática HIV */
+      --secondary-color: #3498db;
+      --accent-color: #e74c3c; /* Vermelho - destaque importante */
+      --light-bg: #f8f9fa;
+      --dark-bg: #343a40;
+      --success-color: #27ae60; /* Verde para indicadores positivos */
+    }
+
+    body {
+      background-color: var(--light-bg);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding-top: 20px;
+      padding-bottom: 50px;
+      color: #333;
+    }
+
+    .header-container {
+      background: linear-gradient(135deg, var(--primary-color), #9b59b6);
+      color: white;
+      border-radius: 15px;
+      padding: 30px 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 150px;
+      height: 150px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="rgba(255,255,255,0.1)"><path d="M50,0 L60,40 L100,50 L60,60 L50,100 L40,60 L0,50 L40,40 Z"/></svg>') no-repeat;
+      background-size: contain;
+    }
+
+    .header-title {
+      font-weight: 700;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .header-subtitle {
+      font-weight: 300;
+      opacity: 0.9;
+      position: relative;
+    }
+
+    .country-flag {
+      width: 40px;
+      height: auto;
+      margin-right: 15px;
+      vertical-align: middle;
+      border-radius: 3px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .form-card, .prediction-card, .graph-card, .stats-card {
+      background-color: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .form-card:hover, .prediction-card:hover, .graph-card:hover, .stats-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-card {
+      border-top: 5px solid var(--secondary-color);
+    }
+
+    .prediction-card {
+      border-left: 5px solid var(--accent-color);
+    }
+
+    .graph-card {
+      border-top: 5px solid var(--primary-color);
+    }
+
+    .stats-card {
+      border-bottom: 5px solid var(--success-color);
+    }
+
+    .form-title, .graph-title, .stats-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-predict {
+      background-color: var(--primary-color);
+      border: none;
+      padding: 12px 30px;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-predict:hover {
+      background-color: #7d3c98;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(142, 68, 173, 0.3);
+    }
+
+    .prediction-value {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      line-height: 1;
+    }
+
+    .prediction-unit {
+      font-size: 1rem;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .info-icon {
+      color: var(--secondary-color);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .info-icon:hover {
+      transform: scale(1.1);
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: var(--primary-color);
+      margin-bottom: 8px;
+    }
+
+    .form-select, .form-control {
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      padding: 12px 15px;
+      transition: all 0.3s ease;
+    }
+
+    .form-select:focus, .form-control:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.3);
+    }
+
+    .alert {
+      border-radius: 10px;
+      border: none;
+    }
+
+    footer {
+      margin-top: 50px;
+      font-size: 0.9rem;
+      color: #6c757d;
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animated {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 10px;
+      background-color: rgba(142, 68, 173, 0.05);
+      transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+      background-color: rgba(142, 68, 173, 0.1);
+      transform: translateX(5px);
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      color: var(--primary-color);
+      font-size: 1.2rem;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .nav-pills .nav-link.active {
+      background-color: var(--primary-color);
+    }
+
+    .nav-pills .nav-link {
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      margin-right: 5px;
+      border-radius: 8px;
+    }
+
+    .tab-content {
+      padding: 20px 0;
+    }
+
+    .risk-indicator {
+      height: 10px;
+      border-radius: 5px;
+      background: linear-gradient(to right, #27ae60, #f1c40f, #e74c3c);
+      margin-top: 10px;
+      position: relative;
+    }
+
+    .risk-marker {
+      position: absolute;
+      top: -15px;
+      width: 2px;
+      height: 20px;
+      background-color: var(--primary-color);
+    }
+
+    .risk-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .map-container {
+      height: 300px;
+      background-color: #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .map-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-weight: 600;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 30px;
+      margin-top: 20px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: var(--primary-color);
+      opacity: 0.3;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -30px;
+      top: 5px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      border: 2px solid white;
+    }
+
+    .timeline-date {
+      font-weight: 600;
+      color: var(--primary-color);
+      margin-bottom: 5px;
+    }
+
+    .timeline-content {
+      background-color: rgba(142, 68, 173, 0.05);
+      padding: 10px 15px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .header-container {
+        text-align: center;
+        padding: 20px 10px;
+      }
+
+      .prediction-value {
+        font-size: 2rem;
+      }
+
+      .header-container::before {
+        opacity: 0.3;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Cabeçalho -->
+    <div class="header-container text-center text-md-start">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h1 class="header-title">
+            <i class="fas fa-virus me-2"></i>
+            Análise de Propagação de HIV
+          </h1>
+          <p class="header-subtitle">
+            <img src="/api/placeholder/32/24" alt="Bandeira de Moçambique" class="country-flag"> 
+            República de Moçambique | Monitoramento Epidemiológico
+          </p>
+        </div>
+        <div class="col-md-4 d-none d-md-block text-end">
+          <i class="fas fa-heartbeat fa-3x text-white-50"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alertas/Mensagens -->
+    {% if messages %}
+    <div class="messages animated">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} shadow-sm">
+        <i class="fas fa-info-circle me-2"></i>
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row">
+      <!-- Formulário e Estatísticas -->
+      <div class="col-lg-4 mb-4">
+        <div class="form-card animated">
+          <h3 class="form-title"><i class="fas fa-sliders-h me-2"></i>Parâmetros de Análise</h3>
+          <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="id_indicator" class="form-label">Indicador <i class="fas fa-question-circle info-icon" title="Selecione o indicador para análise"></i></label>
+              {{ form.indicator }}
+            </div>
+            <div class="mb-3">
+              <label for="id_year" class="form-label">Ano da Previsão <i class="fas fa-question-circle info-icon" title="Selecione o ano para a previsão"></i></label>
+              <input type="number" class="form-control" id="id_year" name="year" min="2024" max="2030" value="2025" required>
+              <small class="form-text text-muted">Selecione um ano entre 2024 e 2030</small>
+            </div>
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-predict">
+                <i class="fas fa-search me-2"></i>Analisar Indicador
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="stats-card animated">
+          <h3 class="stats-title"><i class="fas fa-chart-bar me-2"></i>Estatísticas Nacionais</h3>
+          <div class="stat-item">
+            <div class="stat-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <div>
+              <div class="stat-value">12.6%</div>
+              <div class="stat-label">Prevalência de HIV (15-49 anos)</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">
+              <i class="fas fa-female"></i>
+            </div>
+            <div>
+              <div class="stat-value">15.3%</div>
+              <div class="stat-label">Prevalência em mulheres</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">
+              <i class="fas fa-male"></i>
+            </div>
+            <div>
+              <div class="stat-value">9.1%</div>
+              <div class="stat-label">Prevalência em homens</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">
+              <i class="fas fa-baby"></i>
+            </div>
+            <div>
+              <div class="stat-value">8.2%</div>
+              <div class="stat-label">Transmissão vertical</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card animated">
+          <h3 class="form-title"><i class="fas fa-exclamation-triangle me-2"></i>Nível de Risco</h3>
+          <div class="mb-3">
+            <label>Probabilidade de aumento na prevalência</label>
+            <div class="risk-indicator">
+              <div class="risk-marker" style="left: 65%;"></div>
+            </div>
+            <div class="risk-labels">
+              <span>Baixo</span>
+              <span>Moderado</span>
+              <span>Alto</span>
+              <span>Muito Alto</span>
+            </div>
+          </div>
+          <div class="alert alert-warning mt-3">
+            <i class="fas fa-info-circle me-2"></i>
+            <small>A região selecionada apresenta risco moderado-alto de aumento na prevalência de HIV.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultados e Visualizações -->
+      <div class="col-lg-8">
+        {% if prediction %}
+        <div class="prediction-card animated">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h3 class="form-title"><i class="fas fa-clipboard-check me-2"></i>Projeção de Prevalência</h3>
+              <p class="mb-2">Estimativa para {{ form.cleaned_data.region }} em {{ form.cleaned_data.year }}:</p>
+              <div class="prediction-value">{{ prediction }}</div>
+              <div class="prediction-unit">% da população adulta</div>
+              <div class="mt-3">
+                <span class="badge bg-{% if prediction < 10 %}success{% elif prediction < 15 %}warning{% else %}danger{% endif %}">
+                  {% if prediction < 10 %}Baixa prevalência{% elif prediction < 15 %}Prevalência moderada{% else %}Alta prevalência{% endif %}
+                </span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="map-container">
+                <div class="map-placeholder">
+                  <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                  <div>Mapa de prevalência por região</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="graph-card animated">
+          <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="pills-trend-tab" data-bs-toggle="pill" data-bs-target="#pills-trend" type="button" role="tab">Tendência</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="pills-region-tab" data-bs-toggle="pill" data-bs-target="#pills-region" type="button" role="tab">Por Região</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="pills-age-tab" data-bs-toggle="pill" data-bs-target="#pills-age" type="button" role="tab">Por Idade</button>
+            </li>
+          </ul>
+          <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-trend" role="tabpanel">
+              {% if plot_time_series %}
+              <div class="text-center">
+                <img src="data:image/png;base64,{{ plot_time_series }}" class="img-fluid rounded shadow-sm" alt="Gráfico de série temporal">
+              </div>
+              {% else %}
+              <div class="text-center py-4">
+                <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                <p>Selecione os parâmetros para visualizar a tendência de prevalência</p>
+              </div>
+              {% endif %}
+            </div>
+            <div class="tab-pane fade" id="pills-region" role="tabpanel">
+              <div class="text-center py-4">
+                <i class="fas fa-map fa-4x text-muted mb-3"></i>
+                <p>Visualização de prevalência por região</p>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="pills-age" role="tabpanel">
+              <div class="text-center py-4">
+                <i class="fas fa-user-friends fa-4x text-muted mb-3"></i>
+                <p>Distribuição por faixa etária</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% if plot_prophet %}
+        <div class="graph-card animated">
+          <h3 class="graph-title"><i class="fas fa-project-diagram me-2"></i>Projeção Futura</h3>
+          <div class="text-center">
+            <img src="data:image/png;base64,{{ plot_prophet }}" class="img-fluid rounded shadow-sm" alt="Gráfico de previsão Prophet">
+          </div>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-date">2023-2025</div>
+              <div class="timeline-content">
+                Projeção de estabilização com possível redução devido às atuais intervenções
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-date">2026-2030</div>
+              <div class="timeline-content">
+                Cenário crítico se não houver ampliação dos programas de prevenção
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if plot_kmeans %}
+        <div class="graph-card animated">
+          <h3 class="graph-title"><i class="fas fa-object-group me-2"></i>Padrões Regionais</h3>
+          <div class="text-center">
+            <img src="data:image/png;base64,{{ plot_kmeans }}" class="img-fluid rounded shadow-sm" alt="Gráfico de clusters">
+          </div>
+          <div class="alert alert-info mt-3">
+            <i class="fas fa-lightbulb me-2"></i>
+            <small>As regiões agrupadas apresentam padrões semelhantes de propagação, permitindo estratégias regionalizadas.</small>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Informações adicionais -->
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="alert alert-light border shadow-sm animated">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+              <i class="fas fa-hand-holding-medical fa-2x text-primary me-3"></i>
+            </div>
+            <div>
+              <strong>Estratégias recomendadas:</strong> Ampliação do acesso a testagem, profilaxia pré-exposição (PrEP) para populações-chave, e intensificação da educação sexual em escolas.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="mt-5">
+      <p class="mb-0">&copy; 2025 Sistema de Monitoramento de HIV - Ministério da Saúde de Moçambique</p>
+      <p>Dados atualizados em {% now "F Y" %} | Apoio: ONUSIDA, OMS e parceiros internacionais</p>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Ativar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Animação para os cards ao rolar a página
+    document.addEventListener('DOMContentLoaded', function() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animated');
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.form-card, .prediction-card, .graph-card, .stats-card').forEach(card => {
+        observer.observe(card);
+      });
+    });
+  </script>
+</body>
+</html>
